@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Update Resource</title>
+
+    <style>
+        :root {
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.06);
+            --stroke: rgba(255, 255, 255, 0.08);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --red: #ef4444;
+        }
+
+        * {
+            font-family: "Segoe UI", sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #0b1220, #070b14);
+            color: var(--text);
+        }
+
+        /* CENTER */
+        .wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* CARD */
+        .card {
+            width: 420px;
+            padding: 22px;
+            border-radius: 16px;
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            backdrop-filter: blur(12px);
+        }
+
+        /* TITLE */
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 18px;
+        }
+
+        /* LABEL */
+        label {
+            display: block;
+            margin-top: 14px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: var(--muted);
+        }
+
+        /* DISPLAY FIELD */
+        .display {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+        }
+
+        /* INPUT */
+        input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* ACTIONS */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        /* BUTTON */
+        button {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+
+        .btn-cancel {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text);
+        }
+
+        .btn-cancel:hover {
+            border-color: var(--red);
+        }
+
+        .btn-submit {
+            background: rgba(59, 130, 246, 0.25);
+            color: white;
+        }
+
+        .btn-submit:hover {
+            background: rgba(59, 130, 246, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* MESSAGE */
+        .success {
+            margin-top: 16px;
+            padding: 10px;
+            border-radius: 10px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: var(--green);
+            display: none;
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--red);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrapper">
+        <div class="card">
+
+            <div class="title">🔄 Update Resource</div>
+
+            <label>Hospital</label>
+            <div class="display" id="hid"></div>
+
+            <label>Resource</label>
+            <div class="display" id="resource"></div>
+
+            <label>Available Quantity</label>
+            <input id="qty" type="number" value="0" min="0" />
+
+            <div class="actions">
+                <button class="btn-cancel" onclick="goBack()">Cancel</button>
+                <button id="submitBtn" class="btn-submit" onclick="submit()">Submit</button>
+            </div>
+
+            <div id="msg" class="success"></div>
+
+        </div>
+    </div>
+
+    <script>
+        const BASE = "https://xvvwesom7h.execute-api.us-east-1.amazonaws.com";
+
+        /* PARSE URL */
+        const params = new URLSearchParams(window.location.hash.replace("#", ""));
+
+        const hospitalId = params.get("id");
+        const resourceType = params.get("resource");
+
+        /* SHOW */
+        document.getElementById("hid").innerText = hospitalId;
+        document.getElementById("resource").innerText = resourceType;
+
+        /* SUBMIT */
+        async function submit() {
+            const btn = document.getElementById("submitBtn");
+            const msg = document.getElementById("msg");
+
+            const qty = document.getElementById("qty").value;
+
+            btn.disabled = true;
+            btn.innerText = "Updating...";
+
+            msg.style.display = "none";
+
+            try {
+                const res = await fetch(
+                    `${BASE}/v1/hospitals/${hospitalId}/resources/${resourceType}`,
+                    {
+                        method: "PUT",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            availableQuantity: Number(qty)
+                        })
+                    }
+                );
+
+                const json = await res.json();
+                const status = json?.data?.resourceStatus || "-";
+
+                msg.className = "success";
+                msg.style.display = "block";
+                msg.innerHTML = `✅ Updated successfully (${status})`;
+
+            } catch (err) {
+                msg.className = "success error";
+                msg.style.display = "block";
+                msg.innerHTML = "❌ Update failed";
+
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Submit";
+            }
+        }
+
+        /* BACK */
+        function goBack() {
+            window.location.href = "/detail.html#id=" + hospitalId;
+        }
+    </script>
+
+</body>
+
+</html>

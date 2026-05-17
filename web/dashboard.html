@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Resource Dashboard</title>
+
+    <style>
+        :root {
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.06);
+            --stroke: rgba(255, 255, 255, 0.08);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #0b1220, #070b14);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* NAV */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--stroke);
+            position: sticky;
+            top: 0;
+        }
+
+        .logo {
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .menu span {
+            margin-left: 16px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu span:hover {
+            color: white;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        /* KPI */
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            padding: 16px;
+            border-radius: 14px;
+            backdrop-filter: blur(10px);
+            transition: 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .kpi-title {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .kpi-value {
+            font-size: 26px;
+            font-weight: 700;
+            margin-top: 6px;
+        }
+
+        /* CONTROLS */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        select,
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: rgba(121, 113, 113, 0.04);
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+        }
+
+        option {
+            background: #111827;
+            color: white;
+        }
+
+        select:hover,
+        button:hover {
+            border-color: var(--blue);
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--blue), #1d4ed8);
+            border: none;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        th,
+        td {
+            padding: 14px;
+            text-align: center;
+        }
+
+        th {
+            color: var(--muted);
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        tr {
+            transition: 0.2s;
+            border-bottom: 1px solid var(--stroke);
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+            transform: scale(1.002);
+        }
+
+        /* STATUS */
+        .CRITICAL {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .WARNING {
+            color: var(--yellow);
+            font-weight: 600;
+        }
+
+        .NORMAL {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* INSIGHT */
+        .insight {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 14px;
+            background: var(--card);
+            border: 1px solid var(--stroke);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="navbar">
+        <div class="logo" onclick="go('index.html')">🏥 Hospital Resource Monitoring</div>
+        <div class="menu">
+            <span onclick="go('dashboard.html')">Dashboard</span>
+            <span onclick="go('hospitals.html')">Hospitals</span>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <h2>📊 Resource Monitoring Dashboard</h2>
+
+        <!-- KPI -->
+        <div class="kpis">
+            <div class="card">
+                <div class="kpi-title">Critical Hospitals</div>
+                <div class="kpi-value" id="kpiCritical">0</div>
+            </div>
+
+            <div class="card">
+                <div class="kpi-title">Warning Hospitals</div>
+                <div class="kpi-value" id="kpiWarning">0</div>
+            </div>
+
+            <div class="card">
+                <div class="kpi-title">Total Records</div>
+                <div class="kpi-value" id="kpiTotal">0</div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <select id="resource">
+                <option value="ICU_BED">ICU BED</option>
+                <option value="GENERAL_BED">GENERAL BED</option>
+                <option value="BLOOD_A">BLOOD A</option>
+                <option value="BLOOD_B">BLOOD B</option>
+                <option value="BLOOD_AB">BLOOD AB</option>
+                <option value="BLOOD_O">BLOOD O</option>
+                <option value="VENTILATOR">VENTILATOR</option>
+            </select>
+
+            <select id="status">
+                <option value="">ALL</option>
+                <option value="NORMAL">NORMAL</option>
+                <option value="WARNING">WARNING</option>
+                <option value="CRITICAL">CRITICAL</option>
+            </select>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hospital</th>
+                        <th>Available</th>
+                        <th>Reserved</th>
+                        <th>Effective</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="table"></tbody>
+            </table>
+
+            <div class="insight" id="insight"></div>
+
+        </div>
+
+        <script>
+            const BASE = "https://xvvwesom7h.execute-api.us-east-1.amazonaws.com";
+
+            let auto = false;
+            let timer = null;
+
+            async function load() {
+                const r = document.getElementById("resource").value;
+                const s = document.getElementById("status").value;
+
+                let url = `${BASE}/v1/resources/${r}/hospitals`;
+                if (s) url += "?status=" + s;
+
+                const res = await fetch(url);
+                const json = await res.json();
+
+                const data = json.data?.hospitals || [];
+
+                render(data);
+            }
+
+            function render(data) {
+                document.getElementById("table").innerHTML = data.map(h => `
+        <tr>
+            <td>${h.hospitalId}</td>
+            <td>${h.availableQuantity}</td>
+            <td>${h.reservedQuantity}</td>
+            <td>${h.effectiveAvailable}</td>
+            <td class="${h.resourceStatus}">
+                ${icon(h.resourceStatus)} ${h.resourceStatus}
+            </td>
+        </tr>
+    `).join("");
+
+                const c = data.filter(x => x.resourceStatus === "CRITICAL").length;
+                const w = data.filter(x => x.resourceStatus === "WARNING").length;
+
+                document.getElementById("kpiCritical").innerText = c;
+                document.getElementById("kpiWarning").innerText = w;
+                document.getElementById("kpiTotal").innerText = data.length;
+
+                document.getElementById("insight").innerHTML =
+                    `System Status: monitoring ${data.length} records`;
+            }
+
+            function icon(s) {
+                if (s === "CRITICAL") return "🔴";
+                if (s === "WARNING") return "🟡";
+                return "🟢";
+            }
+
+            function toggleRefresh() {
+                auto = !auto;
+                if (auto) {
+                    timer = setInterval(load, 5000);
+                } else {
+                    clearInterval(timer);
+                }
+            }
+
+            document.getElementById("resource").onchange = load;
+            document.getElementById("status").onchange = load;
+
+            function go(p) { window.location.href = p; }
+
+            load();
+        </script>
+
+</body>
+
+</html>

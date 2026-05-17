@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Detail</title>
+
+    <style>
+        :root {
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.06);
+            --stroke: rgba(255, 255, 255, 0.08);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --blue: #3b82f6;
+            --green: #22c55e;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+        }
+
+        * {
+            font-family: "Segoe UI", sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #0b1220, #070b14);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* NAV */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--stroke);
+            position: sticky;
+            top: 0;
+        }
+
+        .logo {
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .menu span {
+            margin-left: 16px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu span:hover {
+            color: white;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        h2,
+        h3 {
+            margin-bottom: 12px;
+        }
+
+        /* CARD */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* INFO CARD (HEADER STYLE) */
+        #info {
+            line-height: 1.8;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        th {
+            text-align: center;
+            padding: 14px;
+            color: var(--muted);
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        td {
+            padding: 14px;
+            text-align: center;
+        }
+
+        tr {
+            border-bottom: 1px solid var(--stroke);
+            transition: 0.2s;
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+        }
+
+        /* STATUS */
+        .CRITICAL {
+            color: var(--red);
+            font-weight: 600;
+        }
+
+        .WARNING {
+            color: var(--yellow);
+            font-weight: 600;
+        }
+
+        .NORMAL {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* SUMMARY GRID */
+        #summary {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        /* ACTIONS */
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        td button {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 8px;
+        }
+
+        button {
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.04);
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            border-color: var(--blue);
+            background: rgba(59, 130, 246, 0.15);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="navbar">
+        <div class="logo" onclick="go('index.html')">🏥 Hospitals Resource Monitoring</div>
+
+        <div class="menu">
+            <span onclick="go('dashboard.html')">Dashboard</span>
+            <span onclick="go('hospitals.html')">Hospitals</span>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <h2>Hospital Detail</h2>
+
+        <div id="info" class="card"></div>
+
+        <h3>📊 Resource Overview</h3>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Resource</th>
+                    <th>Available</th>
+                    <th>Reserved</th>
+                    <th>Effective</th>
+                    <th>Status</th>
+                    <th>Last Updated</th>
+                    <th> </th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
+
+
+    </div>
+
+    <script>
+        const BASE = "https://xvvwesom7h.execute-api.us-east-1.amazonaws.com";
+
+        /* GET ID */
+        const hash = window.location.hash;
+        const hospitalId = hash.split("=")[1];
+
+        console.log("ID:", hospitalId);
+
+        /* LOAD */
+        async function load() {
+            if (!hospitalId) {
+                alert("❌ Missing hospitalId in URL");
+                return;
+            }
+
+            const res1 = await fetch(BASE + "/v1/hospitals/" + hospitalId);
+            const json1 = await res1.json();
+            const h = json1.data;
+
+            const res2 = await fetch(BASE + "/v1/hospitals/" + hospitalId + "/resources");
+            const json2 = await res2.json();
+            const resources = json2.data?.resources || [];
+
+            renderInfo(h);
+            renderTable(resources);
+            renderSummary(resources);
+        }
+
+        /* INFO */
+        function renderInfo(h) {
+            document.getElementById("info").innerHTML = `
+        <b>Hospital:</b> ${h.hospitalId}<br/>
+        <b>Name:</b> ${h.hospitalName}<br/>
+        📍 ${formatLocation(h.address)}<br/>
+        📞 ${h.contactNumber || "-"}
+    `;
+        }
+
+        /* TABLE */
+        function renderTable(data) {
+            document.getElementById("table").innerHTML = data.map(r => `
+                <tr>
+                    <td>${r.resourceType}</td>
+                    <td>${r.availableQuantity}</td>
+                    <td>${r.reservedQuantity}</td>
+                    <td>${r.effectiveAvailable}</td>
+                    <td class="${r.resourceStatus}">
+                        ${icon(r.resourceStatus)} ${r.resourceStatus}
+                    </td>
+                    <td>${formatDate(r.lastUpdatedTime)}</td>
+
+                    <td>
+                        <button onclick="updateResource('${r.resourceType}')">
+                            ⚙️
+                        </button>
+                    </td>
+                </tr>
+            `).join("");
+        }
+
+        /* SUMMARY (KPI STYLE) */
+        function renderSummary(data) {
+            const critical = data.filter(x => x.resourceStatus === "CRITICAL").length;
+            const normal = data.filter(x => x.resourceStatus === "NORMAL").length;
+            const warning = data.filter(x => x.resourceStatus === "WARNING").length;
+        }
+
+        /* HELPERS */
+        function icon(s) {
+            if (s === "CRITICAL") return "🔴";
+            if (s === "WARNING") return "🟡";
+            return "🟢";
+        }
+
+        function formatLocation(address) {
+            if (!address) return "-";
+            const parts = address.split(",");
+            return parts[parts.length - 2]?.trim() || address;
+        }
+
+        function formatDate(date) {
+            if (!date) return "-";
+            return new Date(date).toLocaleString();
+        }
+
+        /* ACTION */
+        function updateResource(resourceType) {
+            window.location.href = `/update.html#id=${hospitalId}&resource=${resourceType}`;
+        }
+
+        function alertPage() {
+            alert("ไปหน้า alerts (future feature)");
+        }
+
+        /* INIT */
+        load();
+
+        function go(page) {
+            window.location.href = page;
+        }
+    </script>
+
+</body>
+
+</html>

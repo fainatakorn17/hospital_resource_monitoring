@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hospitals</title>
+
+    <style>
+        :root {
+            --bg: #070b14;
+            --card: rgba(255, 255, 255, 0.06);
+            --stroke: rgba(255, 255, 255, 0.08);
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --blue: #3b82f6;
+        }
+
+        * {
+            font-family: "Segoe UI", sans-serif;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: radial-gradient(circle at top, #0b1220, #070b14);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* NAV */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 24px;
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--stroke);
+            position: sticky;
+            top: 0;
+        }
+
+        .logo {
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .menu span {
+            margin-left: 16px;
+            color: var(--muted);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu span:hover {
+            color: white;
+        }
+
+        /* CONTAINER */
+        .container {
+            max-width: 1100px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        h2 {
+            margin-bottom: 14px;
+        }
+
+        /* SEARCH */
+        input {
+            width: 100%;
+            max-width: 420px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--stroke);
+            background: rgba(255, 255, 255, 0.04);
+            color: white;
+            outline: none;
+            margin-bottom: 16px;
+            transition: 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border: 1px solid var(--stroke);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        /* HEADER */
+        th {
+            text-align: left;
+            padding: 14px;
+            color: var(--muted);
+            font-size: 13px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        /* ROW */
+        td {
+            padding: 14px;
+        }
+
+        tr {
+            transition: 0.2s;
+            border-bottom: 1px solid var(--stroke);
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.08);
+            cursor: pointer;
+        }
+
+        /* last row */
+        tr:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="navbar">
+        <div class="logo" onclick="go('index.html')">🏥 Hospital Resource Monitoring</div>
+
+        <div class="menu">
+            <span onclick="go('dashboard.html')">Dashboard</span>
+            <span onclick="go('hospitals.html')">Hospitals</span>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <h2>Hospitals</h2>
+
+        🔍 Search:
+        <input id="search" placeholder="H001 / Ramathibodi" onkeyup="filter()" />
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Hospital ID</th>
+                    <th>Name</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody id="table"></tbody>
+        </table>
+
+    </div>
+
+    <script>
+        const BASE = "https://xvvwesom7h.execute-api.us-east-1.amazonaws.com";
+
+        let allData = [];
+
+        /* LOAD */
+        async function load() {
+            try {
+                const res = await fetch(BASE + "/v1/hospitals");
+                const json = await res.json();
+
+                allData = json.data || [];
+                render(allData);
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* RENDER (ไม่แตะ logic click) */
+        function render(data) {
+            const tbody = document.getElementById("table");
+            tbody.innerHTML = "";
+
+            data.forEach(h => {
+                const tr = document.createElement("tr");
+
+                tr.innerHTML = `
+            <td>${h.hospitalId}</td>
+            <td>${h.hospitalName}</td>
+            <td>${formatLocation(h.address)}</td>
+        `;
+
+                /* ❗ ไม่แก้ logic เดิม (ตามที่ขอ) */
+                tr.addEventListener("click", () => {
+                    window.location.href = "/detail.html#id=" + h.hospitalId;
+                });
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        /* FILTER */
+        function filter() {
+            const keyword = document.getElementById("search").value.toLowerCase();
+
+            const filtered = allData.filter(h =>
+                h.hospitalId.toLowerCase().includes(keyword) ||
+                h.hospitalName.toLowerCase().includes(keyword)
+            );
+
+            render(filtered);
+        }
+
+        /* FORMAT */
+        function formatLocation(address) {
+            if (!address) return "-";
+
+            const parts = address.split(",");
+            return parts[parts.length - 2]?.trim() || address;
+        }
+
+        /* INIT */
+        load();
+
+        function go(page) {
+            window.location.href = page;
+        }
+    </script>
+
+</body>
+
+</html>
