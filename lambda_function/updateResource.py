@@ -25,7 +25,7 @@ def get_trace_id(event):
     return trace_id
 
 def request_resource(trace_id, hospital_id, resource_type, hospital_info):
-    url = "https://re-e6234552945c4020abfbf244b45240fc.ecs.ap-southeast-7.on.aws/v1/resource/"
+    url = "http://r11bwxor8wtixavqo94kpges.5.78.202.146.sslip.io/v1/resource/"
 
     payload = {
         "incidentId": str(uuid.uuid4()),
@@ -33,13 +33,13 @@ def request_resource(trace_id, hospital_id, resource_type, hospital_info):
         "requestFor": resource_type,
         "items": [
             {
-                "id": resource_type,
+                "id": str(uuid.uuid4()),
                 "amount": 1
             }
         ],
         "extraItems": [
             {
-                "name": "",
+                "name": resource_type,
                 "amount": 1
             }
         ],
@@ -59,7 +59,8 @@ def request_resource(trace_id, hospital_id, resource_type, hospital_info):
 
     headers = {
         "Content-Type": "application/json",
-        "idempotency-key": str(uuid.uuid4())
+        "idempotency-key": str(uuid.uuid4()),
+        "x-trace-id": trace_id
     }
 
     try:
@@ -73,7 +74,7 @@ def request_resource(trace_id, hospital_id, resource_type, hospital_info):
             url,
             body=json.dumps(payload, default=float),
             headers=headers,
-            timeout=2.0
+            timeout=5.0
         )
 
         print(json.dumps({
