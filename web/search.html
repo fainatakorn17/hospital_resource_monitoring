@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Search Hospital</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f5f7fa;
+            margin: 0;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 700px;
+            margin: auto;
+        }
+
+        input {
+            padding: 10px;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Status */
+        .CRITICAL {
+            color: red;
+        }
+
+        .WARNING {
+            color: orange;
+        }
+
+        .NORMAL {
+            color: green;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1f2937;
+            color: white;
+            padding: 12px 20px;
+        }
+
+        .logo {
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .menu span {
+            margin-left: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .menu span:hover {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div class="logo" onclick="go('index.html')">🏥 Hospital Resource Monitoring</div>
+
+        <div class="menu">
+            <span onclick="go('dashboard.html')">Dashboard</span>
+            <span onclick="go('hospitals.html')">Hospitals</span>
+            <span onclick="go('search.html')">Search</span>
+            <span onclick="go('alerts.html')">Alerts</span>
+        </div>
+    </div>
+    <div class="container">
+
+        <h2>🔍 Search Hospital</h2>
+
+        Search:
+        <input id="search" placeholder="H001 / Ramathibodi" onkeyup="handleSearch()" />
+
+        <div id="result"></div>
+
+    </div>
+
+    <script>
+        const BASE = "https://xvvwesom7h.execute-api.us-east-1.amazonaws.com";
+
+        /* =========================
+           SEARCH HANDLER
+        ========================= */
+        let timeout = null;
+
+        function handleSearch() {
+            clearTimeout(timeout);
+            timeout = setTimeout(search, 500); // debounce
+        }
+
+        /* =========================
+           SEARCH
+        ========================= */
+        async function search() {
+            const keyword = document.getElementById("search").value.toLowerCase();
+
+            if (!keyword) {
+                document.getElementById("result").innerHTML = "";
+                return;
+            }
+
+            try {
+                // 1. get hospitals
+                const res = await fetch(BASE + "/v1/hospitals");
+                const json = await res.json();
+                const list = json.data || [];
+
+                // 2. find match
+                const h = list.find(x =>
+                    x.hospitalId.toLowerCase().includes(keyword) ||
+                    x.hospitalName.toLowerCase().includes(keyword)
+                );
+
+                if (!h) {
+                    document.getElementById("result").innerHTML = "❌ Not found";
+                    return;
+                }
+
+                // 3. get resources
+                const res2 = await fetch(BASE + "/v1/hospitals/" + h.hospitalId + "/resources");
+                const json2 = await res2.json();
+                const resources = json2.data?.resources || [];
+
+                render(h, resources);
+
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        /* =========================
+           RENDER
+        ========================= */
+        function render(h, resources) {
+
+            let html = `
+    <div class="card">
+
+    <h3>🎯 Result:</h3>
+
+    <b>Hospital:</b> ${h.hospitalId}<br/>
+    <b>Name:</b> ${h.hospitalName}<br/>
+    <b>Location:</b> ${formatLocation(h.address)}<br/>
+    <b>Phone:</b> ${h.contactNumber || "-"}<br/><br/>
+
+    <b>📊 Resources:</b><br/>
+  `;
+
+            resources.forEach(r => {
+                html += `
+      - ${r.resourceType} →
+      <span class="${r.resourceStatus}">
+        ${icon(r.resourceStatus)} ${r.resourceStatus}
+      </span>
+      (${r.availableQuantity})<br/>
+    `;
+            });
+
+            html += `
+    <br/>
+
+
+    </div>
+  `;
+
+            document.getElementById("result").innerHTML = html;
+        }
+
+        /* =========================
+           HELPERS
+        ========================= */
+        function icon(status) {
+            if (status === "CRITICAL") return "🔴";
+            if (status === "WARNING") return "🟡";
+            return "🟢";
+        }
+
+        function formatLocation(address) {
+            if (!address) return "-";
+            const parts = address.split(",");
+            return parts[parts.length - 2]?.trim() || address;
+        }
+
+        function go(id) {
+            window.location.href = "detail.html?id=" + id;
+        }
+        function go(page) {
+            window.location.href = page;
+        } 
+    </script>
+
+</body>
+
+</html>
